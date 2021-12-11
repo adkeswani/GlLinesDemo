@@ -13,6 +13,9 @@ var tetrahedronVertices = [
     glMatrix.vec3.fromValues(0, 0, 1)
 ];
 
+var vertices = [];
+var polyFrequency = 0;
+
 /*
 PRIMITIVES = {
     :tetrahedron => {
@@ -99,7 +102,7 @@ function initMatrices()
     glMatrix.mat4.ortho(projectionMatrix, -gl.viewportWidth / 2, gl.viewportWidth / 2, -gl.viewportHeight / 2, gl.viewportHeight / 2, -1000, 1000);
 
     glMatrix.mat4.identity(modelViewMatrix);
-    glMatrix.mat4.scale(modelViewMatrix, modelViewMatrix, glMatrix.vec3.fromValues(50.0, 50.0, 50.0));
+    glMatrix.mat4.scale(modelViewMatrix, modelViewMatrix, glMatrix.vec3.fromValues(150.0, 150.0, 150.0));
 }
 
 function initBuffers()
@@ -133,7 +136,7 @@ function initBuffers()
 
 function drawScene() 
 {
-    glMatrix.mat4.rotateY(modelViewMatrix, modelViewMatrix, 0.1);
+    glMatrix.mat4.rotateY(modelViewMatrix, modelViewMatrix, 0.01);
 
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -142,9 +145,6 @@ function drawScene()
     sendNewMatrices(templateProgram, projectionMatrix, modelViewMatrix);
 
     sendNewColor(templateProgram, [Math.random(), Math.random(), Math.random(), Math.random()]);
-
-    var vertices = [];
-    vertices.push(...getNewVertices([tetrahedronVertices[0], tetrahedronVertices[2], tetrahedronVertices[1]], 1));
 
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     var offset = 0;
@@ -166,36 +166,35 @@ function getNewVertices(faceVertices, frequency)
         throw "Not a triangular face";
     }
 
-    if (frequency == 0)
+    if (frequency <= 0)
     {
-        return faceVertices;
+        return [...faceVertices[0], ...faceVertices[1], ...faceVertices[1], ...faceVertices[2], ...faceVertices[2], ...faceVertices[0]];
     }
 
-    // Replace with linear interpolate
     var sideVector1 = getSideVector(faceVertices[0], faceVertices[1], frequency);
     var sideVector2 = getSideVector(faceVertices[1], faceVertices[2], frequency);
-    var sideVector3 = getSideVector(faceVertices[0], faceVertices[2], frequency);
+    //var sideVector3 = getSideVector(faceVertices[0], faceVertices[2], frequency);
 
     // Triangle rows
     var newFaceVertices = [];
     for (var row = 0; row < frequency + 1; row++)
     {
-        var start = glMatrix.vec3.create(sideVector1);
+        var start = glMatrix.vec3.clone(sideVector1);
         glMatrix.vec3.multiply(start, start, glMatrix.vec3.fromValues(row, row, row));
         glMatrix.vec3.add(start, start, faceVertices[0]);
 
         // Triangles in each row
         for (var column = 0; column < row + 1; column++)
         {
-            var vertex1 = glMatrix.vec3.create(start);
+            var vertex1 = glMatrix.vec3.clone(start);
 
-            var vertex2 = glMatrix.vec3.create(start);
+            var vertex2 = glMatrix.vec3.clone(start);
             glMatrix.vec3.add(vertex2, vertex2, sideVector1);
 
-            var vertex3 = glMatrix.vec3.create(vertex2);
+            var vertex3 = glMatrix.vec3.clone(vertex2);
             glMatrix.vec3.add(vertex3, vertex3, sideVector2);
 
-            var vertex4 = glMatrix.vec3.create(vertex3);
+            var vertex4 = glMatrix.vec3.clone(vertex3);
 
             glMatrix.vec3.normalize(vertex1, vertex1);
             glMatrix.vec3.normalize(vertex2, vertex2);
@@ -206,16 +205,36 @@ function getNewVertices(faceVertices, frequency)
             {
                 glMatrix.vec3.subtract(vertex4, vertex4, sideVector1);
 
-                start = glMatrix.vec3.create(vertex4);
+                start = glMatrix.vec3.clone(vertex4);
 
                 glMatrix.vec3.normalize(vertex4, vertex4);
-                newFaceVertices.push(...vertex2, ...vertex3, ...vertex3, ...vertex4, ...vertex4, ...vertex2);
+                newFaceVertices.push(...vertex1, ...vertex3, ...vertex3, ...vertex4, ...vertex4, ...vertex1);
             }
         }
     }
 
     return newFaceVertices;
 }
+
+function handleKeys(key)
+{
+    switch (key.code)
+    {
+        case 'KeyP':
+            polyFrequency += 1;
+            break;
+        case 'KeyO':
+            polyFrequency -= 1;
+            break;
+    }
+
+    vertices = [];
+    vertices.push(...getNewVertices([tetrahedronVertices[0], tetrahedronVertices[2], tetrahedronVertices[1]], polyFrequency));
+    vertices.push(...getNewVertices([tetrahedronVertices[0], tetrahedronVertices[1], tetrahedronVertices[3]], polyFrequency));
+    vertices.push(...getNewVertices([tetrahedronVertices[0], tetrahedronVertices[3], tetrahedronVertices[2]], polyFrequency));
+    vertices.push(...getNewVertices([tetrahedronVertices[3], tetrahedronVertices[1], tetrahedronVertices[2]], polyFrequency));
+}
+
 
 function tick(now)
 {
@@ -231,6 +250,8 @@ function tick(now)
 
 function linesStart() 
 {
+    document.addEventListener('keypress', handleKeys);
+
     var canvas = document.getElementById("lines");
     initGl(canvas);
 
