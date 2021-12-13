@@ -67,9 +67,9 @@ function createProgram(fragmentShaderScript, vertexShaderScript)
 function getLocations(program)
 {
     program.a_position = gl.getAttribLocation(program, "a_position");
+    program.a_color = gl.getAttribLocation(program, "a_color");
     program.u_projectionMatrix = gl.getUniformLocation(program, "u_projectionMatrix");
     program.u_modelViewMatrix = gl.getUniformLocation(program, "u_modelViewMatrix");
-    program.u_color = gl.getUniformLocation(program, "u_color");
 }
 
 function sendNewMatrices(program, projectionMatrix, modelViewMatrix)

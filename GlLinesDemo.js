@@ -14,6 +14,7 @@ var tetrahedronVertices = [
 ];
 
 var vertices = [];
+var colors = [];
 var polyFrequency = 0;
 
 /*
@@ -68,19 +69,22 @@ var templateFragmentShaderScript = `#version 300 es
 
     precision highp float;
 
-    uniform vec4 u_color;
+    in vec4 v_color;
 
     out vec4 out_color;
 
     void main(void) 
     {
-        out_color = u_color;
+        out_color = v_color;
     }
 `;
 
 var templateVertexShaderScript = `#version 300 es
 
     in vec3 a_position; 
+    in vec4 a_color;
+
+    out vec4 v_color;
 
     uniform mat4 u_projectionMatrix;
     uniform mat4 u_modelViewMatrix;
@@ -88,13 +92,17 @@ var templateVertexShaderScript = `#version 300 es
     void main(void) 
     {
         gl_Position = u_projectionMatrix * u_modelViewMatrix * vec4(a_position, 1.0);
+        v_color = a_color;
     }
 `;
 
-var templateVertexArrayObject;
 var lastTime = 0;
 var projectionMatrix = glMatrix.mat4.create();
 var modelViewMatrix = glMatrix.mat4.create();
+
+var templateVertexArrayObject;
+var vertexBuffer;
+var colorBuffer;
 
 function initMatrices()
 {
@@ -108,7 +116,7 @@ function initMatrices()
 function initBuffers()
 {
     // Create buffer on GPU
-    var vertexBuffer = gl.createBuffer();
+    vertexBuffer = gl.createBuffer();
 
     // Say that we're going to use that buffer as the ARRAY_BUFFER
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
@@ -132,6 +140,21 @@ function initBuffers()
     var stride = 0;
     var offset = 0;
     gl.vertexAttribPointer(program.a_position, size, type, normalize, stride, offset);
+
+    colorBuffer = gl.createBuffer();
+
+    // Turn on the attribute, without this the attribute will be a constant
+    // Tell it we're going to be putting stuff from buffer into it.
+    gl.enableVertexAttribArray(program.a_color);
+
+    // How to get data out of the buffer, and bind ARRAY_BUFFER to the attribute
+    // Attribute will receive data from that ARRAY_BUFFER
+    var size = 4;
+    var type = gl.FLOAT;
+    var normalize = false;
+    var stride = 0;
+    var offset = 0;
+    gl.vertexAttribPointer(program.a_color, size, type, normalize, stride, offset);
 }
 
 function drawScene() 
@@ -144,17 +167,20 @@ function drawScene()
     gl.useProgram(templateProgram);
     sendNewMatrices(templateProgram, projectionMatrix, modelViewMatrix);
 
-    sendNewColor(templateProgram, [Math.random(), Math.random(), Math.random(), Math.random()]);
-
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+
     var offset = 0;
-    gl.drawArrays(gl.LINES, offset, vertices.length);
+    gl.drawArrays(gl.LINES, offset, vertices.length / 3); // Number of vertices, not number of elements!
 }
 
 function getSideVector(start, end, frequency)
 {
-    var sideVector = glMatrix.vec3.create();
-    glMatrix.vec3.subtract(sideVector, end, start);
+    var sideVector = glMatrix.vec3.clone(end);
+    glMatrix.vec3.subtract(sideVector, sideVector, start);
     glMatrix.vec3.divide(sideVector, sideVector, glMatrix.vec3.fromValues(frequency + 1.0, frequency + 1.0, frequency + 1.0));
     return sideVector;
 }
@@ -233,6 +259,14 @@ function handleKeys(key)
     vertices.push(...getNewVertices([tetrahedronVertices[0], tetrahedronVertices[1], tetrahedronVertices[3]], polyFrequency));
     vertices.push(...getNewVertices([tetrahedronVertices[0], tetrahedronVertices[3], tetrahedronVertices[2]], polyFrequency));
     vertices.push(...getNewVertices([tetrahedronVertices[3], tetrahedronVertices[1], tetrahedronVertices[2]], polyFrequency));
+
+    colors = [];
+    for (var i = 0; i < vertices.length / 3; i++)
+    {
+        colors.push(Math.random(), Math.random(), Math.random(), 1.0);
+    }
+
+    console.log(colors);
 }
 
 
