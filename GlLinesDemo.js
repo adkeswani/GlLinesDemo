@@ -13,56 +13,78 @@ var tetrahedronVertices = [
     glMatrix.vec3.fromValues(0, 0, 1)
 ];
 
+var tetrahedronFaces = 
+[
+    [tetrahedronVertices[0], tetrahedronVertices[2], tetrahedronVertices[1]],
+    [tetrahedronVertices[0], tetrahedronVertices[1], tetrahedronVertices[3]],
+    [tetrahedronVertices[0], tetrahedronVertices[3], tetrahedronVertices[2]],
+    [tetrahedronVertices[3], tetrahedronVertices[1], tetrahedronVertices[2]]
+];
+
+var octahedronVertices = [
+    glMatrix.vec3.fromValues(0, 0, 1),
+    glMatrix.vec3.fromValues(1, 0, 0),
+    glMatrix.vec3.fromValues(0, -1, 0),
+    glMatrix.vec3.fromValues(-1, 0, 0),
+    glMatrix.vec3.fromValues(0, 1, 0),
+    glMatrix.vec3.fromValues(0, 0, -1)
+];
+
+var octahedronFaces =
+[
+    [octahedronVertices[2], octahedronVertices[1], octahedronVertices[0]],
+    [octahedronVertices[3], octahedronVertices[2], octahedronVertices[0]],
+    [octahedronVertices[4], octahedronVertices[3], octahedronVertices[0]],
+    [octahedronVertices[1], octahedronVertices[4], octahedronVertices[0]],
+    [octahedronVertices[3], octahedronVertices[4], octahedronVertices[5]],
+    [octahedronVertices[4], octahedronVertices[1], octahedronVertices[5]],
+    [octahedronVertices[1], octahedronVertices[2], octahedronVertices[5]],
+    [octahedronVertices[2], octahedronVertices[3], octahedronVertices[5]]
+];
+
+var icosahedronVertices = [
+    glMatrix.vec3.fromValues( 1,  GOLDEN_MEAN, 0),
+    glMatrix.vec3.fromValues( 1, -GOLDEN_MEAN, 0),
+    glMatrix.vec3.fromValues(-1, -GOLDEN_MEAN, 0),
+    glMatrix.vec3.fromValues(-1,  GOLDEN_MEAN, 0),
+    glMatrix.vec3.fromValues( GOLDEN_MEAN, 0,  1),
+    glMatrix.vec3.fromValues(-GOLDEN_MEAN, 0,  1),
+    glMatrix.vec3.fromValues(-GOLDEN_MEAN, 0, -1),
+    glMatrix.vec3.fromValues( GOLDEN_MEAN, 0, -1),
+    glMatrix.vec3.fromValues(0,  1,  GOLDEN_MEAN),
+    glMatrix.vec3.fromValues(0,  1, -GOLDEN_MEAN),
+    glMatrix.vec3.fromValues(0, -1, -GOLDEN_MEAN),
+    glMatrix.vec3.fromValues(0, -1,  GOLDEN_MEAN)
+];
+
+var icosahedronFaces =
+[
+    [icosahedronVertices[8], icosahedronVertices[4], icosahedronVertices[0]],
+    [icosahedronVertices[8], icosahedronVertices[0], icosahedronVertices[3]],
+    [icosahedronVertices[8], icosahedronVertices[3], icosahedronVertices[5]],
+    [icosahedronVertices[8], icosahedronVertices[5], icosahedronVertices[11]],
+    [icosahedronVertices[8], icosahedronVertices[11], icosahedronVertices[4]],
+    [icosahedronVertices[4], icosahedronVertices[7], icosahedronVertices[0]],
+    [icosahedronVertices[0], icosahedronVertices[9], icosahedronVertices[3]],
+    [icosahedronVertices[3], icosahedronVertices[6], icosahedronVertices[5]],
+    [icosahedronVertices[5], icosahedronVertices[2], icosahedronVertices[11]],
+    [icosahedronVertices[11], icosahedronVertices[1], icosahedronVertices[4]],
+    [icosahedronVertices[4], icosahedronVertices[1], icosahedronVertices[7]],
+    [icosahedronVertices[0], icosahedronVertices[7], icosahedronVertices[9]],
+    [icosahedronVertices[3], icosahedronVertices[9], icosahedronVertices[6]],
+    [icosahedronVertices[5], icosahedronVertices[6], icosahedronVertices[2]],
+    [icosahedronVertices[11], icosahedronVertices[2], icosahedronVertices[1]],
+    [icosahedronVertices[10], icosahedronVertices[7], icosahedronVertices[1]],
+    [icosahedronVertices[10], icosahedronVertices[9], icosahedronVertices[7]],
+    [icosahedronVertices[10], icosahedronVertices[6], icosahedronVertices[9]],
+    [icosahedronVertices[10], icosahedronVertices[2], icosahedronVertices[6]],
+    [icosahedronVertices[10], icosahedronVertices[1], icosahedronVertices[2]]
+];
+
+var currentFaces = tetrahedronFaces;
 var vertices = [];
 var colors = [];
 var polyFrequency = 0;
-
-/*
-PRIMITIVES = {
-    :tetrahedron => {
-        :points => {
-            'a' => Vector[ -TETRA_S, -TETRA_Q, -TETRA_R ],
-            'b' => Vector[  TETRA_S, -TETRA_Q, -TETRA_R ],
-            'c' => Vector[        0,  TETRA_T, -TETRA_R ],
-            'd' => Vector[        0,        0,        1 ]
-        },
-        :faces => %w| acb abd adc dbc |
-    },
-
-    :octahedron => {
-        :points => {
-            'a' => Vector[  0,  0,  1 ],
-            'b' => Vector[  1,  0,  0 ],
-            'c' => Vector[  0, -1,  0 ],
-            'd' => Vector[ -1,  0,  0 ],
-            'e' => Vector[  0,  1,  0 ],
-            'f' => Vector[  0,  0, -1 ]
-        },
-        :faces => %w| cba dca eda bea
-                      def ebf bcf cdf |
-    },
-    :icosahedron => {
-        :points => {
-            'a' => Vector[  1,  GOLDEN_MEAN, 0 ],
-            'b' => Vector[  1, -GOLDEN_MEAN, 0 ],
-            'c' => Vector[ -1, -GOLDEN_MEAN, 0 ],
-            'd' => Vector[ -1,  GOLDEN_MEAN, 0 ],
-            'e' => Vector[  GOLDEN_MEAN, 0,  1 ],
-            'f' => Vector[ -GOLDEN_MEAN, 0,  1 ],
-            'g' => Vector[ -GOLDEN_MEAN, 0, -1 ],
-            'h' => Vector[  GOLDEN_MEAN, 0, -1 ],
-            'i' => Vector[ 0,  1,  GOLDEN_MEAN ],
-            'j' => Vector[ 0,  1, -GOLDEN_MEAN ],
-            'k' => Vector[ 0, -1, -GOLDEN_MEAN ],
-            'l' => Vector[ 0, -1,  GOLDEN_MEAN ]
-        },
-        :faces => %w| iea iad idf ifl ile
-                      eha ajd dgf fcl lbe
-                      ebh ahj djg fgc lcb
-                      khb kjh kgj kcg kbc |
-    }
-}
-*/
 
 var templateProgram;
 var templateFragmentShaderScript = `#version 300 es
@@ -143,6 +165,9 @@ function initBuffers()
 
     colorBuffer = gl.createBuffer();
 
+    // Say that we're going to use that buffer as the ARRAY_BUFFER
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+
     // Turn on the attribute, without this the attribute will be a constant
     // Tell it we're going to be putting stuff from buffer into it.
     gl.enableVertexAttribArray(program.a_color);
@@ -194,12 +219,22 @@ function getNewVertices(faceVertices, frequency)
 
     if (frequency <= 0)
     {
-        return [...faceVertices[0], ...faceVertices[1], ...faceVertices[1], ...faceVertices[2], ...faceVertices[2], ...faceVertices[0]];
+        var newFaceVertices = [];
+
+        newFaceVertices[0] = glMatrix.vec3.clone(faceVertices[0]);
+        glMatrix.vec3.normalize(newFaceVertices[0], newFaceVertices[0]);
+
+        newFaceVertices[1] = glMatrix.vec3.clone(faceVertices[1]);
+        glMatrix.vec3.normalize(newFaceVertices[1], newFaceVertices[1]);
+
+        newFaceVertices[2] = glMatrix.vec3.clone(faceVertices[2]);
+        glMatrix.vec3.normalize(newFaceVertices[2], newFaceVertices[2]);
+
+        return [...newFaceVertices[0], ...newFaceVertices[1], ...newFaceVertices[1], ...newFaceVertices[2], ...newFaceVertices[2], ...newFaceVertices[0]];
     }
 
     var sideVector1 = getSideVector(faceVertices[0], faceVertices[1], frequency);
     var sideVector2 = getSideVector(faceVertices[1], faceVertices[2], frequency);
-    //var sideVector3 = getSideVector(faceVertices[0], faceVertices[2], frequency);
 
     // Triangle rows
     var newFaceVertices = [];
@@ -246,27 +281,32 @@ function handleKeys(key)
 {
     switch (key.code)
     {
-        case 'KeyP':
+        case 'KeyX':
             polyFrequency += 1;
             break;
-        case 'KeyO':
+        case 'KeyZ':
             polyFrequency -= 1;
+            polyFrequency = Math.max(0, polyFrequency);
+            break;
+        case 'KeyT':
+            currentFaces = tetrahedronFaces;
+            break;
+        case 'KeyO':
+            currentFaces = octahedronFaces;
+            break;
+        case 'KeyI':
+            currentFaces = icosahedronFaces;
             break;
     }
 
     vertices = [];
-    vertices.push(...getNewVertices([tetrahedronVertices[0], tetrahedronVertices[2], tetrahedronVertices[1]], polyFrequency));
-    vertices.push(...getNewVertices([tetrahedronVertices[0], tetrahedronVertices[1], tetrahedronVertices[3]], polyFrequency));
-    vertices.push(...getNewVertices([tetrahedronVertices[0], tetrahedronVertices[3], tetrahedronVertices[2]], polyFrequency));
-    vertices.push(...getNewVertices([tetrahedronVertices[3], tetrahedronVertices[1], tetrahedronVertices[2]], polyFrequency));
+    currentFaces.forEach(face => vertices.push(...getNewVertices([face[0], face[1], face[2]], polyFrequency)));
 
     colors = [];
     for (var i = 0; i < vertices.length / 3; i++)
     {
         colors.push(Math.random(), Math.random(), Math.random(), 1.0);
     }
-
-    console.log(colors);
 }
 
 
